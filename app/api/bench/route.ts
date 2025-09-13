@@ -1,4 +1,4 @@
-export const runtime = "nodejs";
+// Default Fluid Compute for Drizzle, Node for Prisma handled in its route
 import { runBenchmarkDrizzle } from "@/lib/bench-drizzle";
 import { runBenchmarkPrisma } from "@/lib/bench-prisma";
 

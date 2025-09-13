@@ -1,0 +1,26 @@
+// Prisma ORM rust-free setup with ESM-first client generator
+// Uses Neon HTTP adapter and maps to the existing bench_items table
+
+generator client {
+  provider   = "prisma-client"
+  engineType = "client" // Rust-free
+  output     = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model BenchItem {
+  id        String   @id @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  name      String   @db.Text
+  value     Int
+  payload   String   @db.Text
+
+  @@map("bench_items")
+}
+
+

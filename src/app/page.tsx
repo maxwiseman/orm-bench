@@ -1,103 +1,187 @@
-import Image from "next/image";
+"use client";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
+
+type Result = {
+  orm: "drizzle" | "prisma";
+  operation: "read" | "write" | "update" | "mixed";
+  iterations: number;
+  parallel: number;
+  durationMs: number;
+  opsPerSec: number;
+  avgMs?: number;
+  p50Ms?: number;
+  p95Ms?: number;
+  p99Ms?: number;
+};
+
+async function callBench(path: string, body: any) {
+  const res = await fetch(path, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [iterations, setIterations] = useState(200);
+  const [parallel, setParallel] = useState(10);
+  const [operation, setOperation] = useState<Result["operation"]>("mixed");
+  const [loading, setLoading] = useState<string | null>(null);
+  const [results, setResults] = useState<Result[]>([]);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+  const run = async (orm: "drizzle" | "prisma") => {
+    try {
+      setLoading(orm);
+      const path =
+        orm === "drizzle" ? "/api/bench-drizzle" : "/api/bench-prisma";
+      const { result } = await callBench(path, {
+        iterations,
+        parallel,
+        operation,
+      });
+      setResults((r) => [result as Result, ...r]);
+    } catch (e: any) {
+      alert(e?.message || String(e));
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const prepare = async () => {
+    setLoading("prepare");
+    try {
+      const res = await fetch("/api/prepare", { method: "POST" });
+      if (!res.ok) throw new Error(await res.text());
+    } catch (e: any) {
+      alert(e?.message || String(e));
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  return (
+    <div className="container mx-auto max-w-3xl p-6 space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>ORM Bench (Vercel Fluid + Neon)</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Iterations</Label>
+              <Input
+                type="number"
+                value={iterations}
+                onChange={(e) => setIterations(Number(e.target.value))}
+                min={1}
+                max={10000}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Parallel</Label>
+              <Input
+                type="number"
+                value={parallel}
+                onChange={(e) => setParallel(Number(e.target.value))}
+                min={1}
+                max={100}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Operation</Label>
+              <Select
+                value={operation}
+                onValueChange={(v) => setOperation(v as any)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select operation" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="read">read</SelectItem>
+                  <SelectItem value="write">write</SelectItem>
+                  <SelectItem value="update">update</SelectItem>
+                  <SelectItem value="mixed">mixed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <Button onClick={() => run("drizzle")} disabled={!!loading}>
+              {loading === "drizzle" ? "Running…" : "Run Drizzle"}
+            </Button>
+            <Button onClick={() => run("prisma")} disabled={!!loading}>
+              {loading === "prisma" ? "Running…" : "Run Prisma"}
+            </Button>
+            <Button variant="secondary" onClick={prepare} disabled={!!loading}>
+              {loading === "prepare" ? "Preparing…" : "Prepare Table"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Tabs defaultValue="results">
+        <TabsList>
+          <TabsTrigger value="results">Results</TabsTrigger>
+        </TabsList>
+        <TabsContent value="results">
+          <div className="space-y-2">
+            {results.length === 0 && (
+              <p className="text-sm text-muted-foreground">No results yet.</p>
+            )}
+            {results.map((r, i) => (
+              <Card key={i}>
+                <CardContent className="py-4 text-sm">
+                  <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
+                    <div>
+                      <b>ORM</b>
+                      <div>{r.orm}</div>
+                    </div>
+                    <div>
+                      <b>Op</b>
+                      <div>{r.operation}</div>
+                    </div>
+                    <div>
+                      <b>Iter</b>
+                      <div>{r.iterations}</div>
+                    </div>
+                    <div>
+                      <b>Par</b>
+                      <div>{r.parallel}</div>
+                    </div>
+                    <div>
+                      <b>Time</b>
+                      <div>{r.durationMs.toFixed(0)} ms</div>
+                    </div>
+                    <div>
+                      <b>Ops/s</b>
+                      <div>{r.opsPerSec}</div>
+                    </div>
+                    <div className="col-span-2">
+                      <b>p95</b>
+                      <div>{(r.p95Ms ?? 0).toFixed(2)} ms</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-export const runtime = "nodejs";
+// Default Fluid Compute runtime is fine here
 import { neon } from "@neondatabase/serverless";
 
 export async function POST() {
