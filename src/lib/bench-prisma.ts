@@ -1,4 +1,4 @@
-import { prisma } from "./prisma";
+import { getPrisma } from "./prisma";
 
 type Operation = "read" | "write" | "update" | "mixed";
 
@@ -13,6 +13,7 @@ export async function runBenchmarkPrisma(args: {
   const durations: number[] = [];
 
   const doRead = async () => {
+    const prisma = getPrisma();
     await prisma.benchItem.findMany({
       orderBy: { createdAt: "desc" },
       take: 10,
@@ -21,6 +22,7 @@ export async function runBenchmarkPrisma(args: {
 
   const doWrite = async () => {
     const id = crypto.randomUUID();
+    const prisma = getPrisma();
     await prisma.benchItem.create({
       data: {
         id,
@@ -33,6 +35,7 @@ export async function runBenchmarkPrisma(args: {
 
   const doUpdate = async () => {
     const id = crypto.randomUUID();
+    const prisma = getPrisma();
     await prisma.benchItem.create({
       data: {
         id,

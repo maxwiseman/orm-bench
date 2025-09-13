@@ -4,10 +4,15 @@ import * as schema from "./schema";
 
 neonConfig.fetchConnectionCache = true;
 
-const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) {
-  throw new Error("DATABASE_URL is not set");
+let cachedDb: ReturnType<typeof drizzle> | undefined;
+export function getDb() {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    throw new Error("DATABASE_URL is not set");
+  }
+  if (!cachedDb) {
+    const sql = neon(databaseUrl);
+    cachedDb = drizzle(sql, { schema });
+  }
+  return cachedDb;
 }
-
-const sql = neon(databaseUrl);
-export const db = drizzle(sql, { schema });

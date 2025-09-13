@@ -1,4 +1,4 @@
-import { db } from "./drizzle";
+import { getDb } from "./drizzle";
 import { benchItems } from "./schema";
 import { eq, desc } from "drizzle-orm";
 
@@ -15,6 +15,7 @@ export async function runBenchmarkDrizzle(args: {
   const durations: number[] = [];
 
   const doRead = async () => {
+    const db = getDb();
     await db
       .select()
       .from(benchItems)
@@ -24,6 +25,7 @@ export async function runBenchmarkDrizzle(args: {
 
   const doWrite = async () => {
     const id = crypto.randomUUID();
+    const db = getDb();
     await db.insert(benchItems).values({
       id,
       name: `item-${id.slice(0, 8)}`,
@@ -34,6 +36,7 @@ export async function runBenchmarkDrizzle(args: {
 
   const doUpdate = async () => {
     const id = crypto.randomUUID();
+    const db = getDb();
     await db.insert(benchItems).values({
       id,
       name: `item-${id.slice(0, 8)}`,
