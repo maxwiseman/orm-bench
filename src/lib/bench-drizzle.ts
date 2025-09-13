@@ -92,9 +92,17 @@ export async function runBenchmarkDrizzle(args: {
   };
   const sum = durations.reduce((a, b) => a + b, 0);
   const avgMs = durations.length ? sum / durations.length : 0;
+  const variance = durations.length
+    ? durations.reduce((acc, d) => acc + Math.pow(d - avgMs, 2), 0) /
+      durations.length
+    : 0;
+  const stdDevMs = Math.sqrt(variance);
   const p50Ms = pct(50);
+  const p90Ms = pct(90);
   const p95Ms = pct(95);
   const p99Ms = pct(99);
+  const minMs = sorted[0] ?? 0;
+  const maxMs = sorted[sorted.length - 1] ?? 0;
 
   return {
     result: {
@@ -106,8 +114,12 @@ export async function runBenchmarkDrizzle(args: {
       opsPerSec: Number(opsPerSec),
       avgMs,
       p50Ms,
+      p90Ms,
       p95Ms,
       p99Ms,
+      minMs,
+      maxMs,
+      stdDevMs,
     },
   } as const;
 }

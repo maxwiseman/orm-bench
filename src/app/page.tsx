@@ -22,8 +22,12 @@ type Result = {
   opsPerSec: number;
   avgMs?: number;
   p50Ms?: number;
+  p90Ms?: number;
   p95Ms?: number;
   p99Ms?: number;
+  minMs?: number;
+  maxMs?: number;
+  stdDevMs?: number;
 };
 
 async function callBench(path: string, body: any) {
@@ -171,9 +175,31 @@ export default function Home() {
                       <b>Ops/s</b>
                       <div>{r.opsPerSec}</div>
                     </div>
-                    <div className="col-span-2">
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 sm:grid-cols-6 gap-2">
+                    <div>
+                      <b>Avg</b>
+                      <div>{(r.avgMs ?? 0).toFixed(2)} ms</div>
+                    </div>
+                    <div>
+                      <b>p50</b>
+                      <div>{(r.p50Ms ?? 0).toFixed(2)} ms</div>
+                    </div>
+                    <div>
+                      <b>p90</b>
+                      <div>{(r.p90Ms ?? 0).toFixed(2)} ms</div>
+                    </div>
+                    <div>
                       <b>p95</b>
                       <div>{(r.p95Ms ?? 0).toFixed(2)} ms</div>
+                    </div>
+                    <div>
+                      <b>p99</b>
+                      <div>{(r.p99Ms ?? 0).toFixed(2)} ms</div>
+                    </div>
+                    <div>
+                      <b>Std dev</b>
+                      <div>{(r.stdDevMs ?? 0).toFixed(2)} ms</div>
                     </div>
                   </div>
                 </CardContent>
